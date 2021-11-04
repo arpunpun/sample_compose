@@ -1,0 +1,440 @@
+#SERVICES
+
+----------------------------------------------------------------------------------------------------------
+
+>minio
+
+version: '2'
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    hostname: minio
+    restart: always
+    command: server /data1 /data2 /data3 /data4 /data5 /data6 /data7 /data8
+    environment:
+      - MINIO_ACCESS_KEY=FR2QXA7Y
+      - MINIO_SECRET_KEY=AMFJZTX92CB8NS8U
+    volumes:
+      - "/home/root/docker/minio/minio/data/data1:/data1"
+      - "/home/root/docker/minio/minio/data/data2:/data2"
+      - "/home/root/docker/minio/minio/data/data3:/data3"
+      - "/home/root/docker/minio/minio/data/data4:/data4"
+      - "/home/root/docker/minio/minio/data/data5:/data5"
+      - "/home/root/docker/minio/minio/data/data6:/data6"
+      - "/home/root/docker/minio/minio/data/data7:/data7"
+      - "/home/root/docker/minio/minio/data/data8:/data8"
+      - "/home/root/docker/minio/minio/data/config:/root/.minio"
+    ports:
+      - "9001:9000"
+
+----------------------------------------------------------------------------------------------------------
+
+>redis
+
+version: '2'
+services:
+  redis:
+    image: redis:6.2.4
+    container_name: redis
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 6379:6379
+    hostname: redis
+    restart: always
+    volumes:
+      - "/home/root/docker/redis/data:/data"
+      - "/home/root/docker/redis/redis.conf:/etc/redis/redis.conf"
+
+----------------------------------------------------------------------------------------------------------
+
+>matomo
+
+version: '2'
+
+services:
+  matomo:
+    #image: bitnami/matomo:3.11.0
+    image: matomo:3.11.0
+    container_name: matomo
+    hostname: matomo
+    restart: always
+    environment:
+      - "MATOMO_USERNAME=root"
+      - "MATOMO_PASSWORD=bitnami"
+      - "MATOMO_DATABASE_HOST=mysql"
+      - "MATOMO_DATABASE_USERNAME=root"
+      - "MATOMO_DATABASE_PASSWORD=root"
+      - "MATOMO_DATABASE_DBNAME=matomo"
+
+    ports:
+      - "80:80"
+      #- "443:30081"
+      
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    hostname: mysql
+    restart: always
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      - "GOSU_VERSION=1.7"
+      - "MYSQL_MAJOR=5.7"
+      - "MYSQL_VERSION=5.7.28-1debian9"
+    volumes:
+      - "/home/root/docker/mysql/config:/etc/mysql/conf.d"
+      - "/home/root/docker/mysql/data:/var/lib/mysql"
+    ports:
+      - "3306:3306"
+
+----------------------------------------------------------------------------------------------------------
+
+>rabbitmq
+
+version: '3'
+
+services:
+  rabbitmq:
+    image: 'rabbitmq:3.8.9-management'
+    hostname: rabbitmq
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: fXRSLmpvtPEGmmH2FsjuumsagpvYJBcQ
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+      # - '15674:15674'
+    volumes:
+      - '/data/rabbitmq:/var/lib/rabbitmq'
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>gm-ns-api
+
+version: '3'
+
+services:
+  notification_service:
+    image: sc-harbor.suncity-group.com/globalmembership/notification_service:1.0.0-uat.10
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "GM Notification Service"
+      App__Version: "1.0"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=gm_notification;uid=gm_notificationdba;password=P@ssw0rd@gmNotification#!456"
+      App__AllowedOrigins: ""
+      App__IsDBMode: 1
+      ElasticConfiguration__Uri: ""
+      JWT__Issuer: "GM"
+      JWT__AccessTokenAudience: "AccessTokenAudience"
+      JWT__SymmetricSignKey: ""
+      JWT__AccessTokenExpiresMinutes: 10080
+      JWT__RefreshTokenAudience: "RefreshTokenAudience"
+      JWT__RefreshTokenExpiresMinutes: 10080
+      JWT__AsymmetricPublicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPahDfdvYG0f9EdrQls57ryHL04UGWOAFGSIIAkVmIQvfek8/jI+ndWJINF/s6wCOPMFkDG8ovmBcTJQqhUOLsXTQY44zWtQhwZzO2tHZ64XuXXhNCtuWeYvtvCTSFf78lFmdZoB47obvrTUa68X+ybjIz200XU6sGJNWekrAzwIDAQAB"
+      JWT__AsymmetricPrivateKey: "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMI9qEN929gbR/0R2tCWznuvIcvThQZY4AUZIggCRWYhC996Tz+Mj6d1Ykg0X+zrAI48wWQMbyi+YFxMlCqFQ4uxdNBjjjNa1CHBnM7a0dnrhe5deE0K25Z5i+28JNIV/vyUWZ1mgHjuhu+tNRrrxf7JuMjPbTRdTqwYk1Z6SsDPAgMBAAECgYBBU204raZ3as1uPkgCKQXusPrDyzKM7O0Cqe45FVJzw59znHX0oHhb0G2qbPrp+isoqyQ7Wrcz07sir5qRJlqNlZv7LR6AwsX72cjtmbst1nIxlDxINTbt2XDJC7GgGQE+C8sHRpVt38QseKBKv43jVQdZTajOwijLfDK72KzD8QJBAOdPBdtv3rjX0DTd/h/xSbNA7JvdlYvgq3rTzEJvWHc3Tza9dxnwCHga7SgtLaGtnjgDdaCeVNXZo14YUsoJa6kCQQDW+a5RgoJJeQqw6opQXHZqj5imUrBS73/7+4CJTLZ2YUr6GxYIB3kl63SUGRbQV6TXaXQoLMAEzvKgLqiiz1O3AkEA2JD0OvAS552oItd2BxIyntI6tfRRABXqd6W1qL33Zicy012xFWfXhhwvz139S1LywB79EtUrOM38Vy0O1nrbgQJACy9+pHsX8F698aqie7/z4WOLW8wdpJMVo7TYYUx+ifZSAmV6ZfyNjy2LKVGM4FZPG24/Pv/lFdr2wOLsn1wOTQJBAMV1Z9LK7kP6aJ3t1mgOa6C4HDAzGqN1F3BF+iPpnKm+S3yaeSYWtpVJ359G8HdvmpMf9FVdg2jcl5d5Ve8l2WM="
+      RabbitMQ__Hostname: "10.1.14.77"
+      RabbitMQ__Port: 5672
+      RabbitMQ__VirtualHost: "gm_notification_service"
+      RabbitMQ__Username: "gmpush"
+      RabbitMQ__Password: "4xHr445AFJdBjuhF"
+      RabbitMQ__ProcessQueue: "process_queue"
+      RabbitMQ__WriteBackQueue: "write_back_queue"
+      RabbitMQ__BasicQos: 1
+      Redis__Connection: "10.1.14.77:6379"
+      Redis__Password: "hAnNsXHC9Se5Qqqb"
+      Redis__DefaultDatabase: 4
+      Redis__AbortOnConnectFail: 'false'
+      Redis__AllowAdmin: 'false'
+      Redis__ConnectTimeout: 15000
+      Redis__SyncTimeout: 5000
+      Redis__PushMessageExpiryMinutes: 60
+      Redis__SmsMessageExpiryMinutes: 30
+      Redis__UserDeviceExpiryMinutes: 10080    
+    ports:
+      - 8001:80
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>gm-ns-datawriteback
+
+version: '3'
+
+services:
+  notification_service_wb:
+    image: sc-harbor.suncity-group.com/globalmembership/notification_service_datawriteback:1.0.0-uat.3
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "GM Notification Service Datawriteback"
+      App__Version: "1.0"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=gm_notification;uid=gm_notificationdba;password=P@ssw0rd@gmNotification#!456"
+      App__RcspAPI: ""
+      RabbitMQ__Hostname: "10.1.14.77"
+      RabbitMQ__Port: 5672
+      RabbitMQ__VirtualHost: "gm_notification_service"
+      RabbitMQ__Username: "gmpush"
+      RabbitMQ__Password: "4xHr445AFJdBjuhF"
+      RabbitMQ__ProcessQueue: "process_queue"
+      RabbitMQ__WriteBackQueue: "write_back_queue"
+      RabbitMQ__BasicQos: 1
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>gm-ns-pushworker
+
+version: '3'
+
+services:
+  notification_service_pw:
+    image: sc-harbor.suncity-group.com/globalmembership/notification_service_pushworker:1.0.0-uat.3
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "GM Notification Service PushWorker"
+      App__Version: "1.0"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=gm_notification;uid=gm_notificationdba;password=P@ssw0rd@gmNotification#!456"
+      App__IsDBMode: 1
+      RabbitMQ__Hostname: "10.1.14.77"
+      RabbitMQ__Port: 5672
+      RabbitMQ__VirtualHost: "gm_notification_service"
+      RabbitMQ__Username: "gmpush"
+      RabbitMQ__Password: "4xHr445AFJdBjuhF"
+      RabbitMQ__ProcessQueue: "process_queue"
+      RabbitMQ__WriteBackQueue: "write_back_queue"
+      RabbitMQ__BasicQos: 1
+      Redis__Connection: "10.1.14.77:6379"
+      Redis__Password: "hAnNsXHC9Se5Qqqb"
+      Redis__DefaultDatabase: 4
+      Redis__AbortOnConnectFail: 'false'
+      Redis__AllowAdmin: 'false'
+      Redis__ConnectTimeout: 15000
+      Redis__SyncTimeout: 5000
+      Redis__PushMessageExpiryMinutes: 60
+      Redis__SmsMessageExpiryMinutes: 30
+      Redis__UserDeviceExpiryMinutes: 10080
+      Push__ApnP8PrivateKey: "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg/CWTKzq4kJ+Tn/Viajj51+0s14d8JQ3z9pUohJ651XSgCgYIKoZIzj0DAQehRANCAASFNRqfvDJ/FNEzzsZKC5eI9GMM8U58UD0OpW55jKmZUOknJhtIeWPr4MInm1PxucXnOMBRbperFYfPVmODKD/I"
+      Push__ApnP8PrivateKeyId: "BB7MUQ67XB"
+      Push__ApnTeamId: "9W3PBGFW67"
+      Push__ApnAppBundleIdentifier: "com.scgdomain.loyaltyappsuat"
+      Push__IsProduction: 0
+      Push__FcmSenderId: "366738787346"
+      Push__FcmServerKey: "AAAAVWNVzBI:APA91bHJxO12HZtzsqMgOG66Q3X2caJ0QX4E9LFGok9ne_Fseu2m-zCLxXI1i9ouwAL3x43d8sjXO38iCKlGoMRdZLpLMfyPgoUKJOCzOJcvAneOTq27NRQilVGaZMvCeud2K6c7dsaP"
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+#API
+
+----------------------------------------------------------------------------------------------------------
+
+>gm-app-api
+
+version: '3'
+
+services:
+  app:
+    image: sc-harbor.suncity-group.com/globalmembership/app_service:1.0.0-uat.18
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "GM App Service"
+      App__Version: "1.0"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=gm_general;uid=gm_generaldba;password=P@ssw0rd@gmGeneral#!123"
+      App__AllowedOrigins: ""
+      App__IsDBMode: 1
+      Redis__Connection: "10.1.14.77:6379"
+      Redis__Password: "hAnNsXHC9Se5Qqqb"
+      Redis__DefaultDatabase: 5
+      Redis__AbortOnConnectFail: "false"
+      Redis__AllowAdmin: "false"
+      Redis__ConnectTimeout: 15000
+      Redis__SyncTimeout: 5000
+      Redis__PushMessageExpiryMinutes: 60
+      Redis__UserDeviceExpiryMinutes: 10080
+      Redis__PartonSessionExpiryMinutes: 1440
+      Redis__DefaultDataExpiryMinutes: 1440
+      ElasticConfiguration__Uri: "http://10.1.14.75:8002"
+      EnableRequestResponseLogging: "true"
+      JWT__Issuer: "GM"
+      JWT__AccessTokenAudience: "AccessTokenAudience"
+      JWT__AccessTokenExpiresMinutes: 10080
+      JWT__RefreshTokenAudience: "RefreshTokenAudience"
+      JWT__RefreshTokenExpiresMinutes: 10080
+      JWT__AsymmetricPublicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCgRiSsF69Yi8AEmDybOPXN9mLdwsH+G3swErWFk1WYQ41o3jajsD9TInNvoETjrnmyR1EfYU+D+Ki+ACS0bx4dwixZQJ+p7JQU96ZSXNM3bdlcLtLJ/DIO2tA8Fp6kyyt9SFpsONWcXTaQfH/BoCx2xnIHxgfRerarx0afns+L+QIDAQAB"
+      JWT__AsymmetricPrivateKey: "MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAKBGJKwXr1iLwASYPJs49c32Yt3Cwf4bezAStYWTVZhDjWjeNqOwP1Mic2+gROOuebJHUR9hT4P4qL4AJLRvHh3CLFlAn6nslBT3plJc0zdt2Vwu0sn8Mg7a0DwWnqTLK31IWmw41ZxdNpB8f8GgLHbGcgfGB9F6tqvHRp+ez4v5AgMBAAECgYAqLaty+pyzobt7uhChDOFrPX8ROzLQS60knpfUukxZUNXDFk+szjIsD7HvW28luAHgz/HiXzqM0YCe1+zQ6zkyUeXrGaUFXHP54jvRiUcVS5PgB4bUs6IYkMDQGsfnuimpJDBJ/yMpk9jwWY0IC/P8XmWrhQ9Q0/o0CJxAV7i4sQJBAOqfBdCOMDM8cSaM/IN0G0d7fDY0Oh6h4T6zgDnaCXQh67GWoq07SSO6+VB5nYZeIc4IuoLce7YDO4/PXPSwmv0CQQCu4NVlaLk3S+EOetfu4omjV/VTE1/PsBaH64BNhDl2ksY9Zw8u4A//7ZzdThd/yvj7SlNK70gBIIF3mVN/QLutAkB8o/5yzRbOIU37LOr46rWTRAa4xQYbP+RpavKzySE8kMilj2DcpqI0WSAZoIIO3/MVgY2T943BI/aAb6jyVOABAkAEVV30XVv5ms/A5BpluQdgHNXfcSN2qg5k39kWEqi533k6HEusBbFfziuM8Fp0uDrjPzxBJxzJqlyK8im3hYshAkAX5F4oxmQdSzZDAfmbsKl3P7/5+I4Q9O0kwDRj8GTOkqJc3V5A8bTRO61ZEpNMkSshAVxZO/E64HTrwaKohvxJ"
+      Encrypt__RSAPublicKeyTypePkcs8: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMRAQk59NVuaZCm5GNi8k+4gectBskAZD/S5Qwdr6J+ifP64nOQtAswtwNMawdy9L8sKRmKLVlJ0B8Lu8xrUaHIX9LH5Tt/KTP0HBTdcxVqk472IcB4fIaL6IpgLO23mT24lusWWdJuNpsezoVcswonSzDR5rJB7vjskwXklU8gwIDAQAB"
+      Encrypt__RSAPrivateKeyTypePkcs8: "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAIxEBCTn01W5pkKbkY2LyT7iB5y0GyQBkP9LlDB2von6J8/ric5C0CzC3A0xrB3L0vywpGYotWUnQHwu7zGtRochf0sflO38pM/QcFN1zFWqTjvYhwHh8hovoimAs7beZPbiW6xZZ0m42mx7OhVyzCidLMNHmskHu+OyTBeSVTyDAgMBAAECgYBUrmOKHGOcZ56Wq/Et8WyoCDHsS1fvXvq5BloLAEV8a4hJoLvryK6Bt4q+dHSi8IEKiWJXQtBwp0fpMTS7Ww8udRLgXkvI6eaW7Zikrszn/exfjX12//4dQ0NhiugG82zWhHgfMnSKQ0PYgeve3S2pElug5pBovz8t+/ngzqiqkQJBAMFFynSUavi5csu1WMcJNo9f21CpJRlTklVuzx1CRuX4JtF8Qh8eqFU1Ll7zTrbHLsQr2qdgZRG/iUHpIZB3SVcCQQC5yhovci92DpTuyUbNPVAHChX7YQlAGo5qyuFHAL2GmkXT++Yg2DZmNPxwfXu2TzAEHc81rmfYYOsKYNVrfW61AkEArzoxVgUB/0NTmvFt7faiatcDplvUcOPeNmriiKqAURvtRdycrk5DXA19X0TExt5LvjvsX/f7al33ebR+Y9ZivQJALjM0qcHCTaA4ptyEb7skcGuwpa8uprMz4RiMRqTHfHZWkO1d/6LkfCwG7k41+lLcxNlI0reI+US4jf8gczdg1QJBALM0o9sS19LORLcmi1OcB28/iAl3nJrQOnThFonalbDCvcVWcYwthN89zt9Q+2mOM0WT2CT+sQrbgFLVqJj4dCg="
+    ports:
+      - 8001:80
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>kiosk-app-api
+
+version: '3'
+
+services:
+  api:
+    image: sc-harbor.suncity-group.com/loyalty/kiosk_app_api:1.0.0-uat.63
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "UAT Loyalty App API"
+      App__Version: "1.0.0"
+      App__AllowedOrigins: "*"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=Kiosk;User ID=kioskdba;Password=P@ssw0rd@gmkiosk#!"
+      App__CrmEndPoint: "http://10.255.2.21:55101"
+      App__CrmImageDomain: "https://uat-kiosk-minio.hc-loyalty.com"
+      App__ApiDomain: "http://10.1.14.75"
+      App__ApiListPerPage: 20
+      App__NotificationServiceEndPoint: "https://uat-kiosk-app.hc-loyalty.com/gm-notification"
+      App__ArticleListPerPage: 5
+      Minio__EndPoint: "10.1.14.77:9001"
+      Minio__AccessKey: "FR2QXA7Y"
+      Minio__SecretKey: "AMFJZTX92CB8NS8U"
+      JWT__Issuer: "Loyalty Kiosk"
+      JWT__AccessTokenAudience: "AccessTokenAudience"
+      JWT__SymmetricSignKey: ""
+      JWT__AccessTokenExpiresMinutes: 10080
+      JWT__RefreshTokenAudience: "RefreshTokenAudience"
+      JWT__RefreshTokenExpiresMinutes: 10080
+      JWT__AsymmetricPublicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPahDfdvYG0f9EdrQls57ryHL04UGWOAFGSIIAkVmIQvfek8/jI+ndWJINF/s6wCOPMFkDG8ovmBcTJQqhUOLsXTQY44zWtQhwZzO2tHZ64XuXXhNCtuWeYvtvCTSFf78lFmdZoB47obvrTUa68X+ybjIz200XU6sGJNWekrAzwIDAQAB"
+      JWT__AsymmetricPrivateKey: "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMI9qEN929gbR/0R2tCWznuvIcvThQZY4AUZIggCRWYhC996Tz+Mj6d1Ykg0X+zrAI48wWQMbyi+YFxMlCqFQ4uxdNBjjjNa1CHBnM7a0dnrhe5deE0K25Z5i+28JNIV/vyUWZ1mgHjuhu+tNRrrxf7JuMjPbTRdTqwYk1Z6SsDPAgMBAAECgYBBU204raZ3as1uPkgCKQXusPrDyzKM7O0Cqe45FVJzw59znHX0oHhb0G2qbPrp+isoqyQ7Wrcz07sir5qRJlqNlZv7LR6AwsX72cjtmbst1nIxlDxINTbt2XDJC7GgGQE+C8sHRpVt38QseKBKv43jVQdZTajOwijLfDK72KzD8QJBAOdPBdtv3rjX0DTd/h/xSbNA7JvdlYvgq3rTzEJvWHc3Tza9dxnwCHga7SgtLaGtnjgDdaCeVNXZo14YUsoJa6kCQQDW+a5RgoJJeQqw6opQXHZqj5imUrBS73/7+4CJTLZ2YUr6GxYIB3kl63SUGRbQV6TXaXQoLMAEzvKgLqiiz1O3AkEA2JD0OvAS552oItd2BxIyntI6tfRRABXqd6W1qL33Zicy012xFWfXhhwvz139S1LywB79EtUrOM38Vy0O1nrbgQJACy9+pHsX8F698aqie7/z4WOLW8wdpJMVo7TYYUx+ifZSAmV6ZfyNjy2LKVGM4FZPG24/Pv/lFdr2wOLsn1wOTQJBAMV1Z9LK7kP6aJ3t1mgOa6C4HDAzGqN1F3BF+iPpnKm+S3yaeSYWtpVJ359G8HdvmpMf9FVdg2jcl5d5Ve8l2WM="
+      Redis__Connection: "10.1.14.77:6379"
+      Redis__Password: "hAnNsXHC9Se5Qqqb"
+      Redis__DefaultDatabase: 1
+      Redis__AbortOnConnectFail: "false"
+      Redis__AllowAdmin: "false"
+      Redis__ConnectTimeout: 15000
+      Redis__SyncTimeout: 5000
+      Redis__PartonSessionExpiryMinutes: 10080
+      Redis__PartonRefreshTokenExpiryMinutes: 10080
+    ports:
+      - 80:80
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>kiosk_adminpanel
+
+version: '3'
+
+services:
+
+  kiosk-adminpanel:
+    image: sc-harbor.suncity-group.com/loyalty/kiosk_admin_web:1.0.0-build.59
+    hostname: '{{.Node.Hostname}}'
+    deploy:
+      mode: replicated
+      placement:
+       constraints:
+         #- node.role == worker
+         - node.labels.type == node
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        #max_attempts: 10
+      update_config:
+        parallelism: 1
+        delay: 20s
+    ports:
+      - 8080:3000
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>kiosk_adminpanel_api
+
+version: '3'
+
+services:
+  api:
+    image: sc-harbor.suncity-group.com/loyalty/kiosk_adminpanel_api:1.0.0-uat.58
+    hostname: '{{.Node.Hostname}}'
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      App__Name: "UAT Loyalty AdminPanel API"
+      App__Version: "1.0.0"
+      App__AllowedOrigins: "https://uat-kiosk-adminpanel.hc-loyalty.com"
+      App__DbConnection: "Data Source=10.255.1.50;Initial Catalog=Kiosk;User ID=kioskdba;Password=P@ssw0rd@gmkiosk#!"
+      App__CrmEndPoint: "http://10.255.2.21:55101"
+      App__CrmImageDomain: "https://uat-kiosk-minio.hc-loyalty.com"
+      App__ApiDomain: "http://10.1.14.75"
+      App__ApiListPerPage: 20
+      App__NotificationServiceEndPoint: "https://uat-kiosk-app.hc-loyalty.com/gm-notification"
+      Minio__EndPoint: "10.1.14.77:9001"
+      Minio__Bucket: "loyaltykiosk"
+      Minio__AccessKey: "FR2QXA7Y"
+      Minio__SecretKey: "AMFJZTX92CB8NS8U"
+      JWT__Issuer: "Loyalty Kiosk"
+      JWT__AccessTokenAudience: "AccessTokenAudience"
+      JWT__SymmetricSignKey: "u3U6FByFN9BD92eekATFR97kAQFN5X7E"
+      JWT__AccessTokenExpiresMinutes: 10080
+      JWT__RefreshTokenAudience: "RefreshTokenAudience"
+      JWT__RefreshTokenExpiresMinutes: 10080
+      JWT__AsymmetricPublicKey: ""
+      JWT__AsymmetricPrivateKey: ""
+      Redis__Connection: "10.1.14.77:6379"
+      Redis__Password: "hAnNsXHC9Se5Qqqb"
+      Redis__DefaultDatabase: 0
+      Redis__AbortOnConnectFail: "false"
+      Redis__AllowAdmin: "false"
+      Redis__ConnectTimeout: 15000
+      Redis__SyncTimeout: 5000
+      Redis__PartonSessionExpiryMinutes: 1440
+      LDAP__Url: "10.255.2.220"
+      LDAP__BindDn: "signage.ldap@scdnuat"
+      LDAP__BindCredentials: "aR?Psm7R"
+      LDAP__SearchBase: "DC=scdnuat,DC=com"
+      LDAP__SearchFilter: "(&(objectClass=user)(objectClass=person)(sAMAccountName={0}))"
+      LDAP__AdminCn: ""
+      Encrypt__RSAPublicKeyTypePkcs8: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv00XoqZsDgwEpfxmxt8bIjHYd1kNMvkCllH3Bz7REcIrgAYpdoWxyvxZA7wx9meydLy3l9Zwx68Szuio0MbuuXCYURvDiEzTwmbflwG6vt08A2yzze/BIS+rxWUxaqTytegx9txQrOmW3qJjhljzouEAL6CyyO5wVT0UDbYa/lWz+k8/Md4qdVC9PHBfsLdo+zXXUsZzseeZsj/cfzs4xLCu39gFkvi31w76S0JaT1LiGVNKNJK3iVtyxyuVMhk9oa/mZU2/c5JZQe5R79i/rUDplVbRKAuOfQ/irB6PQu0M1A0YUTbva1fycISVlTBtbsS88G9h8Cgnc7hk1RZO9QIDAQAB"
+      Encrypt__RSAPrivateKeyTypePkcs8: "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC/TReipmwODASl/GbG3xsiMdh3WQ0y+QKWUfcHPtERwiuABil2hbHK/FkDvDH2Z7J0vLeX1nDHrxLO6KjQxu65cJhRG8OITNPCZt+XAbq+3TwDbLPN78EhL6vFZTFqpPK16DH23FCs6ZbeomOGWPOi4QAvoLLI7nBVPRQNthr+VbP6Tz8x3ip1UL08cF+wt2j7NddSxnOx55myP9x/OzjEsK7f2AWS+LfXDvpLQlpPUuIZU0o0kreJW3LHK5UyGT2hr+ZlTb9zkllB7lHv2L+tQOmVVtEoC459D+KsHo9C7QzUDRhRNu9rV/JwhJWVMG1uxLzwb2HwKCdzuGTVFk71AgMBAAECggEAI8BsomEn4JguZjb9nj0j/QgDxIpIBTa0XROEbz42JHN9XbfJF/V0fNMcb65ESCCpIVgDl8Tj3u3BPhoNMrd69f0s+juOF3MEQFipgLc6B2GhTaKLF/muxlz6ZTG8QooBMi3q6I/UI/yjzYfbwcfuAIq8VipaP2MQa1222bkm4lEfHjSMqiOjFRA1JP74pQlJdtBpVrBBSfj0adndneTjoFU/koO98FiqKwSH6Zv3G3ehM0ah6p2vKlLu4c1ii4oqvYWimoQGCnWgBYQlkKLe30VIb4eaF5Gmr811Wqhmbrl3no9sJY/5QLSc0v7C4k8RSNGfmbmkjf4RSioXhek+IQKBgQDtWwtIXwOrX0bNA4snDJFzuoSCkUhhHipVAuCcOEhXb4kcxhSEgkHecryjT6WGWw67t02fhyfnlpjzfrsTP6KQWQwcjbUrqP/0O1apYHpqmMlowEYkc8BQ0pljKuUnpSozkPjrGp/9xpQdBnJCECxNni5Z0tPQgWoXKo9258dlUwKBgQDOU/Gi6UDjOxdE47LwqB73bKFGj8wpGqG2VHH9ZdSVT0iuMnEPRsCpfhltQsNwTuvD1bxR3L8MpUwWLO19lI9K+F7lGCsK4JEsG7231+3PRDPJ+FiKnE3z5TwInYei/pQQcOoma601LsI2knYyDhacDg9wbCu9aqywTUT8TpvplwKBgEc3mhsM5zz0SXoaJhaBXuMqg7fpf54kPu9i/aHiAVK61Jkdlepsavcj1hXqP/AgQjtwtIm5M+/478ufquILpetJzKiEnGeNPb86TrZjjFePoF8d0e3+DSYzCnMG29sZY6A1T3q7cmXiv242EPJhh+mCHMY2y/cz3XE2A/XZdaqhAoGAXWy/LkAmBH4eNDBSNww5MVm70QKNtFL9xFyKXO3+CzmiNFZcwUkNNfIGO2YOrszdjog6RGsLCwPR5vyi8MkS9SRve5as7rjuoyVQi203njFIrfxIw0KxPW2f+Fq0LwbNLoCiVZFOFZW9lQ5OfK3KaREoxoQEbjleRlpGkWRazrMCgYEAzGPwj2ikRld+Fe8CWbVO+G7w6JzRWcruRAUMnMuyX2SSPj9k/LTQDorAI88TBWDoV1Y45LYDOlOfGHvj2J2dP50XOTPidSaDj/fcHvAMI8X3qPK6BoDqXix4asyQPbcCpdrZEnaoZL3AQNghrC5iLymTZjGc+3w03KFc2j70y/A="        
+    ports:
+      - 80:80
+    restart: always
+
+----------------------------------------------------------------------------------------------------------
+
+>elasticsearch & kibana
+
+version: '3.1'
+
+services:
+
+  elasticsearch:
+   container_name: elasticsearch
+   image: docker.elastic.co/elasticsearch/elasticsearch:7.11.1
+   ports:
+    - 8002:9200
+   volumes:
+    - elasticsearch-data:/usr/share/elasticsearch/data
+   environment:
+    - xpack.monitoring.enabled=true
+    - xpack.watcher.enabled=false
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    - discovery.type=single-node
+
+  kibana:
+   container_name: kibana
+   image: docker.elastic.co/kibana/kibana:7.11.1
+   ports:
+    - 8003:5601
+   depends_on:
+    - elasticsearch
+   environment:
+    - ELASTICSEARCH_URL=http://localhost:8004
+
+volumes:
+  elasticsearch-data:
+
+----------------------------------------------------------------------------------------------------------
