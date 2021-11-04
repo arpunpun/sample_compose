@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  filebrowser:
+    image: sc-harbor.suncity-group.com/docker-hub/filebrowser:latest
+    mem_swappiness: -1
+    restart: always
+    volumes:
+      - /:/srv
+      #- /volume1/docker/filebrowser/filebrowser.db:/database.db
+      #- /volume1/docker/filebrowser/.filebrowser.json:/.filebrowser.json
+    ports:
+      - 8010:80
