@@ -1,0 +1,251 @@
+-----------------------------------------------------------------
+#redis
+-----------------------------------------------------------------
+requirepass hAnNsXHC9Se5Qqqb
+bind 0.0.0.0
+protected-mode yes
+port 6379
+tcp-backlog 511
+daemonize no
+supervised no
+pidfile /var/run/redis_6379.pid
+loglevel notice
+logfile ""
+databases 16
+always-show-logo yes
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+replica-serve-stale-data yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-diskless-load disabled
+repl-disable-tcp-nodelay no
+replica-priority 100
+acllog-max-len 128
+lazyfree-lazy-eviction no
+lazyfree-lazy-expire no
+lazyfree-lazy-server-del no
+
+-----------------------------------------------------------------
+#nginx.conf
+-----------------------------------------------------------------
+
+user	root;
+worker_processes  4;
+
+error_log  /var/log/nginx/error.log;
+pid        /var/run/nginx.pid;
+
+
+events {
+	use epoll;
+    worker_connections  102400;
+}
+
+worker_rlimit_nofile 102400;
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+    gzip on;
+	
+    include /etc/nginx/conf.d/*.conf;
+}
+
+-----------------------------------------------------------------
+loyalty-api.conf
+-----------------------------------------------------------------
+
+upstream loyalty-app-api {
+    server 10.1.14.75:8009;
+    server 10.1.14.76:8009;
+}
+
+server{
+    listen 443 ssl;
+    server_name loyalty-api.hoianasuncity.com;
+
+    client_max_body_size 100M;
+
+    access_log /var/log/nginx/loyalty-api.access.log;
+    error_log /var/log/nginx/loyalty-api.error.log;
+
+    ssl_certificate      /etc/nginx/ssl/hoianasuncity.com.crt;
+    ssl_certificate_key  /etc/nginx/ssl/hoianasuncity.com.key;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_session_cache shared:SSL:20m;
+    ssl_session_timeout 180m;
+
+    location /app {
+      proxy_pass http://loyalty-app-api;
+      proxy_pass_header Content-Type;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $http_host;
+
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_redirect off;
+    }
+
+#filter swagger
+
+}
+
+-----------------------------------------------------------------
+loyalty-minio.conf
+-----------------------------------------------------------------
+
+server{
+    listen 443 ssl;
+    server_name loyalty-minio.hoianasuncity.com;
+
+    client_max_body_size 100M;
+
+    access_log /var/log/nginx/loyalty-minio.access.log;
+    error_log /var/log/nginx/loyalty-minio.error.log;
+
+    ssl_certificate      /etc/nginx/ssl/hoianasuncity.com.crt;
+    ssl_certificate_key  /etc/nginx/ssl/hoianasuncity.com.key;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_session_cache shared:SSL:20m;
+    ssl_session_timeout 180m;
+
+    location / {
+      proxy_pass http://10.1.14.77:9001;
+      proxy_pass_header Content-Type;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $http_host;
+
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_redirect off;
+    }
+
+
+
+}
+
+-----------------------------------------------------------------
+loyalty-statistic.conf
+-----------------------------------------------------------------
+
+server{
+    listen 443 ssl;
+    server_name loyalty-statistic.hoianasuncity.com;
+
+    client_max_body_size 100M;
+
+    access_log /var/log/nginx/loyalty-statistic.access.log;
+    error_log /var/log/nginx/loyalty-statistic.error.log;
+
+    ssl_certificate      /etc/nginx/ssl/hoianasuncity.com.crt;
+    ssl_certificate_key  /etc/nginx/ssl/hoianasuncity.com.key;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_session_cache shared:SSL:20m;
+    ssl_session_timeout 180m;
+
+    location / {
+      proxy_pass http://10.1.14.77:80;
+      proxy_pass_header Content-Type;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $http_host;
+
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_redirect off;
+    }
+
+
+
+}
+
+-----------------------------------------------------------------
+loyalty-adminpanel.conf
+-----------------------------------------------------------------
+
+upstream loyalty-adminpanel-api {
+    server 10.1.14.75:8010;
+    server 10.1.14.76:8010;
+}
+
+server{
+    listen 443 ssl;
+    server_name loyalty-adminpanel.hoianasuncity.com;
+
+    client_max_body_size 100M;
+
+    access_log /var/log/nginx/loyalty-adminpanel.access.log;
+    error_log /var/log/nginx/loyalty-adminpanel.error.log;
+
+    ssl_certificate      /etc/nginx/ssl/hoianasuncity.com.crt;
+    ssl_certificate_key  /etc/nginx/ssl/hoianasuncity.com.key;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_session_cache shared:SSL:20m;
+    ssl_session_timeout 180m;
+
+    location / {
+      proxy_pass http://10.1.14.76:8080;
+      proxy_pass_header Content-Type;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $http_host;
+
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_redirect off;
+    }
+
+	location /api {
+      proxy_pass http://loyalty-adminpanel-api;
+      proxy_pass_header Content-Type;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $http_host;
+
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_redirect off;
+    }
+
+
+}
